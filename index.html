@@ -256,6 +256,9 @@ textarea{resize:vertical;min-height:90px;font-size:13px}
     <div class="ni" id="ni-squadre" onclick="navigate('squadre')">
       <div class="ni-icon">👥</div>Squadre
     </div>
+    <div class="ni" id="ni-presenze" onclick="navigate('presenze')">
+      <div class="ni-icon">✅</div>Presenze
+    </div>
     <div class="ni" id="ni-proponi" onclick="navigate('proponi')">
       <div class="ni-icon">✏️</div>Proponi
     </div>
@@ -507,10 +510,10 @@ function navigate(p){
   PAGE=p;
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   document.getElementById('ni-'+p)?.classList.add('active');
-  const T={oggi:'Oggi',cantieri:'Cantieri',squadre:'Squadre',proponi:'Proponi modifica',proposte:'Le mie proposte'};
+  const T={oggi:'Oggi',cantieri:'Cantieri',squadre:'Squadre',presenze:'Registra presenze',proponi:'Proponi modifica',proposte:'Le mie proposte'};
   document.getElementById('tb-title').textContent=T[p]||p;
   const c=document.getElementById('content');
-  ({oggi:renderOggi,cantieri:renderCantieri,squadre:renderSquadre,proponi:renderProponi,proposte:renderProposte})[p]?.(c);
+  ({oggi:renderOggi,cantieri:renderCantieri,squadre:renderSquadre,presenze:renderPresenze,proponi:renderProponi,proposte:renderProposte})[p]?.(c);
 }
 
 // ── SQUADRE ────────────────────────────────────────────────────
@@ -1099,6 +1102,205 @@ function renderCantieri(el){
 function toggleDot(id){
   const el=document.getElementById(id);
   if(el){ el.style.display=el.style.display==='none'?'block':'none'; }
+}
+
+// ── REGISTRA PRESENZE (consuntivo giornaliero) ─────────────────
+// Roberto registra, giorno per giorno, chi è davvero presente e se fa
+// turno INTERO o PARZIALE. L'elenco di partenza è la squadra pianificata
+// (dagli interventi del giorno); Roberto conferma o corregge. L'invio crea
+// una proposta PRESENZE_GIORNO in roberto_staging, che Giuseppe applica nel
+// gestionale. Le paghe/importi le calcola Giuseppe: Roberto non vede né
+// inserisce dati economici.
+let PRES = { data:'', rows:[], _builtFor:null };
+
+function presQuick(tipo){
+  const d=new Date();
+  if(tipo==='ieri') d.setDate(d.getDate()-1);
+  presSetData(d.toISOString().slice(0,10));
+}
+function presSetData(d){
+  PRES.data=d;
+  PRES.rows=_presRowsDaInterventi(d);
+  PRES._builtFor=d;
+  const di=document.getElementById('pres-date'); if(di) di.value=d;
+  renderPresRows();
+  renderPresAdd();
+}
+
+// Righe candidate (persona × intervento) per la data: dalla squadra pianificata
+function _presRowsDaInterventi(d){
+  const rows=[];
+  (DB.cantieri||[]).forEach(c=>{
+    (c.interventi||[]).forEach(iv=>{
+      if(iv.data!==d) return;   // la presenza si registra sul giorno d'inizio turno
+      const oraI=iv.oraInizio||'08:00', oraF=iv.oraFine||'18:00';
+      const nott=iv.notturno||(toMin(oraF)<=toMin(oraI));
+      sqArr(iv).forEach(nome=>{
+        rows.push({
+          key:uid(), nome, cantiere:c.nome, cantiereId:c.id, ivId:iv.id,
+          oraIPlan:oraI, oraFPlan:oraF, notturno:nott,
+          stato:'intero', oraI, oraF, manual:false
+        });
+      });
+    });
+  });
+  rows.sort((a,b)=>cmpOra(a.oraI,a.oraF,a.cantiere,b.oraI,b.oraF,b.cantiere));
+  return rows;
+}
+
+function renderPresenze(el){
+  if(!PRES.data) PRES.data=today();
+  if(PRES._builtFor!==PRES.data || !PRES.rows.length){
+    PRES.rows=_presRowsDaInterventi(PRES.data);
+    PRES._builtFor=PRES.data;
+  }
+  const d=PRES.data;
+  el.innerHTML=`
+    <div class="card">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Segna chi è <b style="color:var(--text)">presente</b> e se fa <b style="color:var(--green)">turno intero</b> o <b style="color:var(--gold)">parziale</b>. L'elenco parte dalla squadra pianificata — tu confermi o correggi. L'invio va a Giuseppe per la registrazione (le paghe le calcola lui).</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn btn-s" style="flex:1;margin-top:0;padding:8px;font-size:12px" onclick="presQuick('ieri')">Ieri</button>
+        <button class="btn btn-s" style="flex:1;margin-top:0;padding:8px;font-size:12px" onclick="presQuick('oggi')">Oggi</button>
+      </div>
+      <label>Giornata</label>
+      <input type="date" id="pres-date" value="${d}" onchange="presSetData(this.value)" style="margin-bottom:0">
+    </div>
+    <div id="pres-rows"></div>
+    <div id="pres-add"></div>
+    <button class="btn btn-p" onclick="inviaPresenze()" style="margin-top:4px">📤 Invia presenze a Giuseppe</button>`;
+  renderPresRows();
+  renderPresAdd();
+}
+
+const PRES_STATI=[
+  {k:'intero',  lbl:'✅ Intero',  col:'var(--green)'},
+  {k:'parziale',lbl:'🕐 Parziale',col:'var(--gold)'},
+  {k:'assente', lbl:'✕ Assente',  col:'var(--red)'}
+];
+
+function renderPresRows(){
+  const wrap=document.getElementById('pres-rows'); if(!wrap) return;
+  const nInt=PRES.rows.filter(r=>r.stato==='intero').length;
+  const nPar=PRES.rows.filter(r=>r.stato==='parziale').length;
+  const nAss=PRES.rows.filter(r=>r.stato==='assente').length;
+  let h='';
+  if(PRES.rows.length){
+    h+=`<div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="flex:1;background:rgba(75,232,122,.12);border:1px solid var(--green);border-radius:9px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">${nInt}</div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Intero</div></div>
+      <div style="flex:1;background:rgba(232,184,75,.12);border:1px solid var(--gold);border-radius:9px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gold)">${nPar}</div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Parziale</div></div>
+      <div style="flex:1;background:rgba(232,84,84,.12);border:1px solid var(--red);border-radius:9px;padding:8px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">${nAss}</div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Assente</div></div>
+    </div>`;
+  } else {
+    h+=`<div class="empty" style="padding:26px 16px">🗓️<br><br>Nessun intervento pianificato per questo giorno.<br><span style="font-size:12px">Puoi comunque aggiungere una persona qui sotto.</span></div>`;
+  }
+  h+=PRES.rows.map((r,i)=>{
+    const seg=PRES_STATI.map(s=>{
+      const on=r.stato===s.k;
+      return `<button onclick="presStato(${i},'${s.k}')" style="flex:1;padding:9px 4px;border-radius:7px;border:1.5px solid ${on?s.col:'var(--brd)'};background:${on?s.col+'22':'transparent'};color:${on?s.col:'var(--text2)'};font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer">${s.lbl}</button>`;
+    }).join('');
+    const parziale = r.stato==='parziale' ? `
+      <div style="display:flex;gap:8px;margin-top:9px;align-items:center">
+        <span style="font-size:11px;color:var(--text2);white-space:nowrap">Orario reale</span>
+        <input type="time" value="${r.oraI}" onchange="presTime(${i},'oraI',this.value)" style="flex:1;margin-bottom:0;padding:7px">
+        <span style="color:var(--text2)">→</span>
+        <input type="time" value="${r.oraF}" onchange="presTime(${i},'oraF',this.value)" style="flex:1;margin-bottom:0;padding:7px">
+      </div>` : '';
+    const dim = r.stato==='assente' ? 'opacity:.55;' : '';
+    return `<div class="card" style="padding:12px;${dim}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px">
+        <div>
+          <div style="font-size:15px;font-weight:800">${soloNome(r.nome)}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">🏗 ${r.cantiere} · 🕐 ${r.oraIPlan}–${r.oraFPlan}${r.notturno?' 🌙':''}</div>
+        </div>
+        ${r.manual?`<button onclick="presRm(${i})" style="background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer" title="Rimuovi">✕</button>`:''}
+      </div>
+      <div style="display:flex;gap:6px">${seg}</div>
+      ${parziale}
+    </div>`;
+  }).join('');
+  wrap.innerHTML=h;
+}
+
+function presStato(i,st){ if(PRES.rows[i]){ PRES.rows[i].stato=st; renderPresRows(); } }
+function presTime(i,which,val){ if(PRES.rows[i]) PRES.rows[i][which]=val; }
+function presRm(i){ PRES.rows.splice(i,1); renderPresRows(); }
+
+function renderPresAdd(){
+  const el=document.getElementById('pres-add'); if(!el) return;
+  const pers=(DB.personaleHR||[]).map(p=>`<option value="${((p.nome||'')+' '+(p.cognome||'')).trim()}">`).join('');
+  const cant=(DB.cantieri||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  el.innerHTML=`
+    <details style="margin-bottom:12px" id="pres-add-det">
+      <summary style="cursor:pointer;color:var(--teal);font-size:13px;font-weight:700;padding:11px 14px;background:var(--navy2);border-radius:9px;list-style:none">➕ Aggiungi una persona non prevista</summary>
+      <div class="card" style="margin-top:8px">
+        <datalist id="pres-dl">${pers}</datalist>
+        <label>Nome</label>
+        <input id="pres-add-nome" list="pres-dl" placeholder="Nome dipendente">
+        <label>Cantiere</label>
+        <select id="pres-add-cant"><option value="">— Seleziona —</option>${cant}</select>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label>Inizio</label><input type="time" id="pres-add-oi" value="08:00"></div>
+          <div style="flex:1"><label>Fine</label><input type="time" id="pres-add-of" value="18:00"></div>
+        </div>
+        <button class="btn btn-s" onclick="presAddManual()" style="margin-top:4px">+ Aggiungi alla giornata</button>
+      </div>
+    </details>`;
+}
+
+function presAddManual(){
+  const nome=(document.getElementById('pres-add-nome')?.value||'').trim();
+  const cid=document.getElementById('pres-add-cant')?.value||'';
+  const cObj=(DB.cantieri||[]).find(c=>c.id===cid);
+  if(!nome){ toast('⚠ Inserisci il nome'); return; }
+  if(!cObj){ toast('⚠ Seleziona il cantiere'); return; }
+  const oi=document.getElementById('pres-add-oi')?.value||'08:00';
+  const of=document.getElementById('pres-add-of')?.value||'18:00';
+  PRES.rows.push({
+    key:uid(), nome, cantiere:cObj.nome, cantiereId:cObj.id, ivId:null,
+    oraIPlan:oi, oraFPlan:of, notturno:toMin(of)<=toMin(oi),
+    stato:'intero', oraI:oi, oraF:of, manual:true
+  });
+  renderPresRows();
+  const det=document.getElementById('pres-add-det'); if(det) det.open=false;
+  const ni=document.getElementById('pres-add-nome'); if(ni) ni.value='';
+  toast('Aggiunto: '+soloNome(nome));
+}
+
+async function inviaPresenze(){
+  const d=PRES.data;
+  if(!d){ toast('⚠ Seleziona la giornata'); return; }
+  if(!PRES.rows.length){ toast('⚠ Nessuna presenza da registrare'); return; }
+  const voci=PRES.rows.map(r=>({
+    nome:r.nome, cantiere:r.cantiere, cantiereId:r.cantiereId, ivId:r.ivId||null,
+    tipo:r.stato,                               // intero | parziale | assente
+    oraI:r.stato==='parziale'?r.oraI:r.oraIPlan,
+    oraF:r.stato==='parziale'?r.oraF:r.oraFPlan,
+    notturno:!!r.notturno
+  }));
+  const nInt=voci.filter(v=>v.tipo==='intero').length;
+  const nPar=voci.filter(v=>v.tipo==='parziale').length;
+  const nAss=voci.filter(v=>v.tipo==='assente').length;
+  const parts=[`${nInt} intero`];
+  if(nPar) parts.push(`${nPar} parziale`);
+  if(nAss) parts.push(`${nAss} assente`);
+  const cr={
+    id:uid(), tipo:'PRESENZE_GIORNO', autore:USERNAME,
+    cantiereName:'Presenze '+fdateG(d), stato:'pending',
+    timestamp:new Date().toISOString(),
+    data:d, voci, nInt, nPar, nAss,
+    label:`Presenze ${fdateG(d)} — ${parts.join(', ')}`
+  };
+  try{
+    STAGING.changeRequests.push(cr);
+    await saveStaging();
+    aggBadge();
+    PRES._builtFor=null;   // ricostruisci pulito alla prossima apertura
+    toast('✓ Presenze inviate a Giuseppe');
+    navigate('proposte');
+  }catch(e){
+    STAGING.changeRequests.pop();
+    toast('⚠ Errore invio: '+e.message);
+  }
 }
 
 // ── PROPONI ────────────────────────────────────────────────────
