@@ -375,7 +375,10 @@ async function loadMain(){
     if(archIds.has(c.id)) return false;
     // Escludi conclusi e persi — Roberto vede solo cantieri attivi/da confermare
     const s=(c.stato||'').toLowerCase();
-    if(s.includes('conclus')||s.includes('perso')||s.includes('rifiut')) return false;
+    if(s.includes('perso')||s.includes('rifiut')) return false;
+    // un cantiere "concluso" resta visibile se ha ancora lavori pianificati da oggi in poi
+    // (es. chiuso in automatico e poi riprogrammato dal Diario): i turni non devono sparire
+    if(s.includes('conclus')){ const t=today(); return (c.interventi||[]).some(iv=>iv&&iv.data&&iv.data>=t); }
     return true;
   }).map(filtraEco);
   DB.personaleHR = (d.personaleHR||[]);
