@@ -1,4 +1,4 @@
-const CACHE_NAME = 'otto8100-roberto-v4';
+const CACHE_NAME = 'otto8100-roberto-v5';
 
 self.addEventListener('install', e => {
   e.waitUntil(

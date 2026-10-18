@@ -6,11 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a1628">
-<meta name="apple-mobile-web-app-title" content="Planning convocazioni">
+<meta name="apple-mobile-web-app-title" content="81|00 Campo">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<title>Planning convocazioni</title>
+<title>81|00 Campo — Roberto</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -24,20 +24,10 @@
 html,body{height:100%;overflow:hidden;background:var(--bg)}
 body{color:var(--text);font-family:'Syne',sans-serif;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
 
-.batch-fab{position:fixed;bottom:calc(max(env(safe-area-inset-bottom),4px)+60px);right:14px;background:var(--gold);color:#000;font-size:13px;font-weight:800;padding:12px 18px;border-radius:30px;border:none;cursor:pointer;z-index:50;box-shadow:0 4px 20px rgba(232,184,75,.5);display:none;animation:pulse .8s infinite alternate}
-@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.05)}}
-.batch-cell{outline:2px dashed var(--gold);outline-offset:-2px;cursor:pointer;transition:background .15s}
-.batch-cell:hover{background:rgba(232,184,75,.08)!important}
-.bm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:60;display:flex;align-items:flex-end}
-.bm-sheet{background:var(--navy2);border-radius:16px 16px 0 0;padding:20px 16px;padding-bottom:max(env(safe-area-inset-bottom)+16px,20px);width:100%;max-width:480px;margin:0 auto}
-.bm-title{font-size:15px;font-weight:800;margin-bottom:14px}
-.bm-field{margin-bottom:12px}
-.bm-field label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:700;display:block;margin-bottom:4px}
-.bm-field input,.bm-field select{width:100%;background:var(--navy);border:1px solid var(--brd);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:10px 12px;outline:none}
 .wa-card{background:var(--navy2);border:1px solid var(--brd);border-radius:12px;padding:16px;margin-top:14px;font-family:'DM Mono',monospace;font-size:12px;white-space:pre-wrap;color:var(--text);line-height:1.7}
 
 #splash{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:999;transition:opacity .3s}
-#splash h1{font-size:32px;font-weight:800;color:var(--teal);margin:12px 0 6px}
+#splash h1{font-size:28px;font-weight:800;color:var(--teal);margin:12px 0 6px;text-align:center;padding:0 16px}
 #splash p{font-size:13px;color:var(--text2)}
 
 /* ── LOGIN ── */
@@ -52,6 +42,10 @@ body{color:var(--text);font-family:'Syne',sans-serif;display:flex;flex-direction
 .pin-btn:active{background:var(--teal);color:#fff;transform:scale(.95)}
 .pin-del{background:var(--navy);font-size:20px}
 #login-err{color:var(--red);font-size:13px;margin-top:16px;min-height:18px;text-align:center}
+#offline-screen{display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:32px;text-align:center}
+#offline-screen h2{font-size:20px;font-weight:800;margin-bottom:6px}
+#offline-screen p{font-size:13px;color:var(--text2);margin-bottom:20px}
+#offline-det{font-size:11px;color:var(--text2);margin-top:14px;font-family:'DM Mono',monospace;word-break:break-word;max-width:320px}
 
 /* ── MAIN APP ── */
 #app{display:none;flex-direction:column;height:100%;overflow:hidden}
@@ -95,7 +89,7 @@ textarea{resize:vertical;min-height:90px;font-size:13px}
 .pr-card.approved{border-left-color:var(--green)}
 .pr-card.rejected{border-left-color:var(--red)}
 .empty{text-align:center;padding:48px 16px;color:var(--text2);font-size:14px}
-#toast-r{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy2);border:1px solid var(--brd);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;z-index:1000;opacity:0;transition:opacity .25s;white-space:nowrap;max-width:90vw;text-align:center;pointer-events:none}
+#toast-r{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy2);border:1px solid var(--brd);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;z-index:1000;opacity:0;transition:opacity .25s;white-space:normal;max-width:90vw;text-align:center;pointer-events:none}
 </style>
 <!-- 81|00 — Login "solo motore" (senza overlay), per app che hanno GIÀ una
      loro schermata PIN (es. App Roberto). Installa il fetch-wrapper e
@@ -190,7 +184,7 @@ textarea{resize:vertical;min-height:90px;font-size:13px}
 
 <div id="splash">
   <div style="font-size:52px">🏗️</div>
-  <h1>Planning convocazioni</h1>
+  <h1>81|00 Campo — Roberto</h1>
   <p>Caricamento...</p>
 </div>
 
@@ -221,50 +215,16 @@ textarea{resize:vertical;min-height:90px;font-size:13px}
   <div id="login-err"></div>
 </div>
 
+<!-- OFFLINE (sessione valida ma dati non caricabili) -->
+<div id="offline-screen">
+  <div style="font-size:44px;margin-bottom:10px">📡</div>
+  <h2>Offline</h2>
+  <p>Impossibile caricare i dati, riprova.<br>Controlla la connessione.</p>
+  <button class="btn btn-p" style="max-width:260px" onclick="riprovaBoot()">🔄 Riprova</button>
+  <div id="offline-det"></div>
+</div>
+
 <!-- APP -->
-<!-- FAB batch proposte -->
-<button class="batch-fab" id="batch-fab" onclick="mostraRiepilogoBatch()">
-  📤 Invia <span id="batch-count">0</span> proposte
-</button>
-
-<!-- Bottom sheet modifica turno da griglia -->
-<div class="bm-overlay" id="bm-overlay" style="display:none" onclick="if(event.target===this)chiudiBm()">
-  <div class="bm-sheet">
-    <div class="bm-title" id="bm-title">Proponi modifica turno</div>
-    <input type="hidden" id="bm-data">
-    <input type="hidden" id="bm-nome">
-    <input type="hidden" id="bm-cid">
-    <input type="hidden" id="bm-ivid">
-    <div class="bm-field"><label>Cantiere</label>
-      <select id="bm-cantiere"></select>
-    </div>
-    <div style="display:flex;gap:10px">
-      <div class="bm-field" style="flex:1"><label>Ora inizio</label>
-        <input type="time" id="bm-oraI" value="08:00"></div>
-      <div class="bm-field" style="flex:1"><label>Ora fine</label>
-        <input type="time" id="bm-oraF" value="18:00"></div>
-    </div>
-    <div class="bm-field"><label>Note (opzionale)</label>
-      <input type="text" id="bm-note" placeholder="es. causa traffico..."></div>
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button onclick="chiudiBm()" style="flex:1;background:var(--navy);border:1px solid var(--brd);border-radius:8px;padding:12px;color:var(--text2);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Annulla</button>
-      <button id="bm-rimuovi" onclick="aggiungiProposta('rimuovi')" style="background:rgba(232,84,84,.15);border:1px solid var(--red);border-radius:8px;padding:12px 14px;color:var(--red);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:none">✕ Rimuovi</button>
-      <button onclick="aggiungiProposta('modifica')" style="flex:2;background:var(--gold);border:none;border-radius:8px;padding:12px;color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">+ Aggiungi proposta</button>
-    </div>
-  </div>
-</div>
-
-<!-- Riepilogo batch -->
-<div class="bm-overlay" id="batch-recap-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
-  <div class="bm-sheet" style="max-height:70vh;overflow-y:auto">
-    <div class="bm-title">📋 Proposte da inviare</div>
-    <div id="batch-recap-list"></div>
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button onclick="document.getElementById('batch-recap-overlay').style.display='none'" style="flex:1;background:var(--navy);border:1px solid var(--brd);border-radius:8px;padding:12px;color:var(--text2);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Continua a modificare</button>
-      <button onclick="inviaBatch()" style="flex:2;background:var(--teal);border:none;border-radius:8px;padding:12px;color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">📤 Invia tutte</button>
-    </div>
-  </div>
-</div>
 
 <div id="app">
   <div id="topbar">
@@ -328,6 +288,10 @@ const isoLocale = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'
 const today = () => isoLocale(new Date());
 const uid   = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const fdate = s => { if(!s)return'—'; const[y,m,d]=s.split('-'); return`${d}/${m}/${y}`; };
+// Escape HTML per i testi del gestionale messi in innerHTML (nomi, note, descrizioni…)
+const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Stringa JS tra apici singoli dentro un attributo onclick="…": prima escape JS, poi HTML
+const jsq = s => esc(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' '));
 const GG    = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
 const fgiorno   = s => { if(!s)return''; return GG[new Date(s+'T12:00:00').getDay()]; };
 const fdateG    = s => `${fgiorno(s)} ${fdate(s)}`;
@@ -353,26 +317,70 @@ function toast(msg, dur=2800){
 // ── SUPABASE ───────────────────────────────────────────────────
 const HDR = {'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':'application/json'};
 
+// Errore HTTP con status (serve a distinguere "rete giù" da "sessione non valida")
+async function httpErr(r, ctx){
+  let msg='';
+  try{ const t=await r.text(); try{ const j=JSON.parse(t); msg=j.message||j.hint||j.error||t; }catch(_){ msg=t; } }catch(_){}
+  const e=new Error(`${ctx}: HTTP ${r.status}${msg?' — '+String(msg).slice(0,200):''}`);
+  e.status=r.status; return e;
+}
+const isAuthErr = e => !!e && (e.status===401 || e.status===403);
+
 async function sbRead(id){
   const r = await fetch(`${SB_URL}/rest/v1/${SB_TBL}?id=eq.${id}&select=dati`,{headers:HDR, cache:'no-cache'});
-  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  if(!r.ok) throw await httpErr(r, 'Lettura '+id);
   const rows = await r.json();
   return rows?.[0]?.dati ?? null;
 }
 
-// Upsert corretto per Supabase: POST con resolution=merge-duplicates
-// evita il problema del PATCH che ritorna 204 anche su 0 righe aggiornate.
-async function sbUpsert(id, dati){
-  const r = await fetch(`${SB_URL}/rest/v1/${SB_TBL}`, {
-    method:'POST',
-    headers:{...HDR,'Prefer':'resolution=merge-duplicates,return=minimal'},
-    body: JSON.stringify({id, dati, aggiornato_il:new Date().toISOString()})
-  });
-  if(!r.ok) throw new Error(`Upsert ${id} fallito: ${r.status}`);
+function normStaging(d){
+  const o = (d && typeof d==='object') ? d : {};
+  if(!Array.isArray(o.changeRequests)) o.changeRequests=[];
+  if(!o.config || typeof o.config!=='object') o.config={};
+  return o;
 }
 
-async function saveStaging(){
-  await sbUpsert(STG_ID, STAGING);
+// Crea la riga staging SOLO se non esiste (ignore-duplicates: non sovrascrive mai
+// una riga già presente, es. creata nel frattempo dal Planning).
+async function creaStagingSeManca(){
+  const r = await fetch(`${SB_URL}/rest/v1/${SB_TBL}`, {
+    method:'POST',
+    headers:{...HDR,'Prefer':'resolution=ignore-duplicates,return=minimal'},
+    body: JSON.stringify({id:STG_ID, dati:{changeRequests:[], config:{}}, aggiornato_il:new Date().toISOString()})
+  });
+  if(!r.ok) throw await httpErr(r, 'Creazione staging');
+}
+
+// Modifica PUNTUALE di roberto_staging con lock ottimistico.
+// Prima si salvava lo STAGING in memoria tutto intero: se nel frattempo Giuseppe
+// aveva approvato/rifiutato proposte nel Planning, le sue decisioni venivano
+// riportate indietro. Ora: legge la riga fresca (dati+versione), applica solo la
+// modifica richiesta (mutate), PATCH con &versione=eq.N. Se risponde 0 righe
+// qualcuno ha scritto nel frattempo → rilegge e riprova (max 5 tentativi).
+// mutate(dati) può lanciare un errore per annullare (nessun nuovo tentativo).
+async function modificaStaging(mutate){
+  for(let tent=0; tent<5; tent++){
+    const r0 = await fetch(`${SB_URL}/rest/v1/${SB_TBL}?id=eq.${STG_ID}&select=dati,versione`,{headers:HDR, cache:'no-cache'});
+    if(!r0.ok) throw await httpErr(r0, 'Lettura staging');
+    const row = (await r0.json())?.[0];
+    if(!row){ await creaStagingSeManca(); continue; }   // riga assente: creala vuota e riprova
+    const dati = normStaging(row.dati);
+    mutate(dati);
+    const vf = row.versione==null ? 'versione=is.null' : `versione=eq.${encodeURIComponent(row.versione)}`;
+    const r = await fetch(`${SB_URL}/rest/v1/${SB_TBL}?id=eq.${STG_ID}&${vf}`, {
+      method:'PATCH',
+      headers:{...HDR,'Prefer':'return=representation'},
+      body: JSON.stringify({dati, aggiornato_il:new Date().toISOString()})
+    });
+    if(!r.ok) throw await httpErr(r, 'Salvataggio staging');
+    const out = await r.json();
+    if(Array.isArray(out) && out.length){
+      STAGING = normStaging(out[0].dati ?? dati);   // stato locale = quello davvero salvato
+      return STAGING;
+    }
+    await new Promise(res=>setTimeout(res, 150*(tent+1)));   // conflitto di versione: riprova
+  }
+  throw new Error('dati modificati da un altro utente nel frattempo, riprova');
 }
 
 // ── SHA-256 PIN HASH (Web Crypto — no dipendenze) ──────────────
@@ -425,27 +433,34 @@ async function loadMain(){
 }
 
 // Risorse allocate ai cantieri — dalla tabella dedicata, così Roberto sa cosa montare
+// Non blocca l'app se fallisce, ma l'errore NON viene più nascosto: resta in
+// DB._allocErr (avviso nella pagina Cantieri) e si tengono i dati già caricati.
 async function loadAllocazioni(){
   try{
     const r = await fetch(`${SB_URL}/rest/v1/allocazioni?select=cantiere_id,risorsa_id,qty,data_uscita,data_rientro,stato&order=data_uscita`,{headers:HDR, cache:'no-cache'});
-    if(!r.ok){ DB.allocazioni=[]; return; }
-    DB.allocazioni = await r.json();
+    if(!r.ok) throw await httpErr(r, 'Risorse allocate');
+    const alloc = await r.json();
     // mappa id→nome risorsa (una sola lettura)
     const rr = await fetch(`${SB_URL}/rest/v1/risorse?select=id,nome,unita`,{headers:HDR, cache:'no-cache'});
-    DB._risorseMap = {};
-    if(rr.ok){ (await rr.json()).forEach(x=>DB._risorseMap[x.id]={nome:x.nome,unita:x.unita}); }
-  }catch(e){ DB.allocazioni=[]; DB._risorseMap={}; }
+    if(!rr.ok) throw await httpErr(rr, 'Anagrafica risorse');
+    const map = {};
+    (await rr.json()).forEach(x=>map[x.id]={nome:x.nome,unita:x.unita});
+    DB.allocazioni = alloc; DB._risorseMap = map; DB._allocErr = null;
+  }catch(e){
+    console.error('loadAllocazioni', e);
+    if(!DB.allocazioni) DB.allocazioni=[];
+    if(!DB._risorseMap) DB._risorseMap={};
+    DB._allocErr = (e && e.message) || 'errore di rete';
+  }
 }
 
 async function loadStaging(){
   const d = await sbRead(STG_ID);
   if(d){
-    STAGING = d;
-    if(!STAGING.changeRequests) STAGING.changeRequests=[];
-    if(!STAGING.config)         STAGING.config={};
+    STAGING = normStaging(d);
   } else {
     STAGING = {changeRequests:[], config:{}};
-    await saveStaging(); // inizializza la riga se non esiste
+    await creaStagingSeManca(); // inizializza la riga se non esiste (senza sovrascrivere)
   }
 }
 
@@ -477,8 +492,11 @@ async function verifyPin(){
     await loadMain();
     await bootApp();
   }catch(e){
-    errEl.textContent='Errore di rete. Controlla la connessione.';
+    console.error(e);
     pinBuf=''; _updateDots();
+    // login riuscito ma dati non caricabili per rete: non serve rifare il PIN
+    if(window.l81valid() && !isAuthErr(e)){ errEl.textContent=''; mostraOffline(e); return; }
+    errEl.textContent = isAuthErr(e) ? '⚠️ Accesso non autorizzato. Reinserisci il PIN.' : 'Errore di rete. Controlla la connessione.';
   }
 }
 
@@ -494,7 +512,13 @@ async function boot(){
       setTimeout(()=>splash.style.display='none',300);
       return;
     }
-  }catch(e){ /* rete non disponibile — mostra login offline */ }
+  }catch(e){
+    console.error(e);
+    // Rete giù / server non raggiungibile: NON mandare al PIN (la sessione è valida),
+    // mostra "Offline" con Riprova. Al login solo per errori di autenticazione.
+    if(!isAuthErr(e)){ mostraOffline(e); return; }
+    if(window.l81logout) window.l81logout();
+  }
   splash.style.opacity='0';
   setTimeout(()=>{
     splash.style.display='none';
@@ -503,7 +527,25 @@ async function boot(){
   },300);
 }
 
+function mostraOffline(e){
+  const splash=document.getElementById('splash');
+  splash.style.opacity='0';
+  setTimeout(()=>splash.style.display='none',300);
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='none';
+  const det=document.getElementById('offline-det');
+  if(det) det.textContent = (e && e.message) ? e.message : '';
+  document.getElementById('offline-screen').style.display='flex';
+}
+async function riprovaBoot(){
+  document.getElementById('offline-screen').style.display='none';
+  const splash=document.getElementById('splash');
+  splash.style.display='flex'; splash.style.opacity='1';
+  await boot();
+}
+
 async function bootApp(){
+  document.getElementById('offline-screen').style.display='none';
   document.getElementById('splash').style.opacity='0';
   setTimeout(()=>document.getElementById('splash').style.display='none',300);
   document.getElementById('login-screen').style.display='none';
@@ -717,12 +759,12 @@ function _sqGiorno(el,{giorni,mappa,righe}){
       const c=clr(r.cId);
       return `<div style="background:${c}10;border:1.5px solid ${c};border-radius:var(--r3);padding:14px;margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="font-size:16px;font-weight:800;color:${c}">${r.cNome}</div>
-          <div style="font-size:12px;font-weight:700;background:${c}25;border:1px solid ${c};border-radius:6px;padding:3px 9px;color:${c}">🕐 Conv. ${r.oraI}</div>
+          <div style="font-size:16px;font-weight:800;color:${c}">${esc(r.cNome)}</div>
+          <div style="font-size:12px;font-weight:700;background:${c}25;border:1px solid ${c};border-radius:6px;padding:3px 9px;color:${c}">🕐 Conv. ${esc(r.oraI)}</div>
         </div>
         <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text2);margin-bottom:7px">👷 Squadra assegnata</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${r.persone.map(p=>`<span class="chip" style="border-color:${c};color:var(--text)">${soloNome(p)}</span>`).join('')}
+          ${r.persone.map(p=>`<span class="chip" style="border-color:${c};color:var(--text)">${esc(soloNome(p))}</span>`).join('')}
         </div>
       </div>`;
     }).join('');
@@ -732,7 +774,7 @@ function _sqGiorno(el,{giorni,mappa,righe}){
     h+=`<div style="background:var(--navy2);border-radius:var(--r2);padding:12px;margin-top:4px">
       <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text2);margin-bottom:8px">🟢 Disponibili — non ancora assegnati</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${liberi.map(p=>`<span class="chip" onclick="precompilaProponiDaSquadre('${g}','${p.replace(/'/g,"\\'")}','${clr('libero')}')" style="cursor:pointer;border-style:dashed" title="Tocca per proporre un'assegnazione">${soloNome(p)} <span style="color:var(--teal);font-size:11px">+proponi</span></span>`).join('')}
+        ${liberi.map(p=>`<span class="chip" onclick="precompilaProponiDaSquadre('${jsq(g)}','${jsq(p)}','${clr('libero')}')" style="cursor:pointer;border-style:dashed" title="Tocca per proporre un'assegnazione">${esc(soloNome(p))} <span style="color:var(--teal);font-size:11px">+proponi</span></span>`).join('')}
       </div>
     </div>`;
   }
@@ -752,7 +794,7 @@ function _sqPersona(el,{giorni,mappa,righe}){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <button onclick="SQ.personaIdx--;aggiornaVistaSq()" ${prev?'':'disabled'} style="background:${prev?'var(--teal)':'var(--brd)'};border:none;border-radius:10px;width:44px;height:44px;font-size:20px;cursor:${prev?'pointer':'default'};color:#fff;flex-shrink:0">←</button>
       <div style="text-align:center;flex:1">
-        <div style="font-size:20px;font-weight:800">👷 ${soloNome(nome)}</div>
+        <div style="font-size:20px;font-weight:800">👷 ${esc(soloNome(nome))}</div>
         <div style="font-size:12px;color:var(--text2);margin-top:4px">${SQ.personaIdx+1} / ${righe.length}</div>
       </div>
       <button onclick="SQ.personaIdx++;aggiornaVistaSq()" ${next?'':'disabled'} style="background:${next?'var(--teal)':'var(--brd)'};border:none;border-radius:10px;width:44px;height:44px;font-size:20px;cursor:${next?'pointer':'default'};color:#fff;flex-shrink:0">→</button>
@@ -781,12 +823,12 @@ function _sqPersona(el,{giorni,mappa,righe}){
         </div>
         <div style="flex:1">
           ${ass.length===0
-            ? `<div onclick="precompilaProponiDaSquadre('${g}','${nome.replace(/'/g,"\\'")}','')" style="cursor:pointer;color:var(--text2);font-size:12px;padding:8px;background:var(--navy2);border-radius:8px;border:1px dashed var(--brd)">Libero — <span style="color:var(--teal)">+proponi assegnazione</span></div>`
+            ? `<div onclick="precompilaProponiDaSquadre('${jsq(g)}','${jsq(nome)}','')" style="cursor:pointer;color:var(--text2);font-size:12px;padding:8px;background:var(--navy2);border-radius:8px;border:1px dashed var(--brd)">Libero — <span style="color:var(--teal)">+proponi assegnazione</span></div>`
             : ass.map(a=>{
                 const c=clr(a.cId);
                 return `<div style="background:${c}15;border:1.5px solid ${c};border-radius:9px;padding:9px 12px;margin-bottom:5px">
-                  <div style="font-size:14px;font-weight:700;color:${c}">${a.cNome}</div>
-                  <div style="font-size:12px;color:var(--text2);margin-top:2px">🕐 Conv. ${a.oraI}</div>
+                  <div style="font-size:14px;font-weight:700;color:${c}">${esc(a.cNome)}</div>
+                  <div style="font-size:12px;color:var(--text2);margin-top:2px">🕐 Conv. ${esc(a.oraI)}</div>
                 </div>`;
               }).join('')
           }
@@ -800,11 +842,8 @@ function _sqPersona(el,{giorni,mappa,righe}){
 // ── VISTA GRIGLIA ─────────────────────────────────────────────
 function _sqGriglia(el,{giorni,mappa,righe}){
   if(!righe.length){el.innerHTML='<div class="empty">Nessun dipendente in anagrafica.</div>';return;}
-  const bm=window._batchMode||false;
   const haConfl=as=>{for(let i=0;i<as.length;i++)for(let j=i+1;j<as.length;j++)if(timeOverlap(as[i].oraI,as[i].oraF,as[j].oraI,as[j].oraF))return true;return false;};
-  window._sqCells=[];
   let h=`<div style="overflow-x:auto">
-    ${bm?`<div style="font-size:11px;color:var(--gold);font-weight:700;padding:8px 10px;background:rgba(232,184,75,.08);border-radius:8px;margin-bottom:8px">✏️ Modalità proposta attiva — tocca una cella per proporre una modifica</div>`:''}
     <table style="border-collapse:collapse;font-size:11px;min-width:100%">
     <thead><tr>
       <th style="position:sticky;left:0;background:var(--card);padding:6px 10px;text-align:left;border-bottom:2px solid var(--brd);white-space:nowrap;z-index:1">Persona</th>
@@ -812,80 +851,27 @@ function _sqGriglia(el,{giorni,mappa,righe}){
     </tr></thead><tbody>`;
   righe.forEach((nome,ri)=>{
     const nLC=nome.toLowerCase();
-    h+=`<tr><td style="position:sticky;left:0;background:${ri%2===0?'var(--card)':'var(--navy2)'};padding:6px 10px;font-weight:600;border-bottom:1px solid var(--brd);white-space:nowrap;font-size:12px">${soloNome(nome)}</td>`;
+    h+=`<tr><td style="position:sticky;left:0;background:${ri%2===0?'var(--card)':'var(--navy2)'};padding:6px 10px;font-weight:600;border-bottom:1px solid var(--brd);white-space:nowrap;font-size:12px">${esc(soloNome(nome))}</td>`;
     giorni.forEach(g=>{
       const ass=ordinaAss(mappa[g][nLC]||[]);
       const bg=ri%2===0?'var(--card)':'var(--navy2)';
-      const hasProp=(window._batchProposte||[]).some(p=>p.data===g&&p.nome===nome);
-      const idx=window._sqCells.length;
-      window._sqCells.push({data:g,nome,cId:ass[0]?.cId||'',ivId:ass[0]?.ivId||'',oraI:ass[0]?.oraI||'08:00',oraF:ass[0]?.oraF||'18:00',hasAss:ass.length>0});
-      const clickFn=bm?`apriBm(${idx})`:(ass.length===0?`precompilaProponiDaSquadre('${g}','','')`:'');
-      const style=`padding:${ass.length?3:4}px;border-bottom:1px solid var(--brd);${ass.length?'vertical-align:top;':'text-align:center;'}background:${bg};${bm?'cursor:pointer;outline:1px dashed rgba(232,184,75,.4);':''}`; 
+      const clickFn=ass.length===0?`precompilaProponiDaSquadre('${jsq(g)}','','')`:'';
+      const style=`padding:${ass.length?3:4}px;border-bottom:1px solid var(--brd);${ass.length?'vertical-align:top;':'text-align:center;'}background:${bg};`;
       h+=`<td style="${style}" onclick="${clickFn}">`;
-      if(!ass.length){ h+=`<span style="color:${bm?'var(--gold)':'var(--text2)'};font-size:${bm?12:10}px">${bm?'＋':'—'}</span>`; }
+      if(!ass.length){ h+=`<span style="color:var(--text2);font-size:10px">—</span>`; }
       else{
         const confl=haConfl(ass);
-        h+=ass.map(a=>{const c=clr(a.cId);return`<div style="background:${c}20;border:1px solid ${confl?'#ef4444':c};border-radius:4px;padding:2px 5px;margin-bottom:2px;font-size:11px;font-weight:600;color:${c};white-space:nowrap">${a.cNome.slice(0,8)}<br>🕐 ${a.oraI}</div>`;}).join('');
+        h+=ass.map(a=>{const c=clr(a.cId);return`<div style="background:${c}20;border:1px solid ${confl?'#ef4444':c};border-radius:4px;padding:2px 5px;margin-bottom:2px;font-size:11px;font-weight:600;color:${c};white-space:nowrap">${esc(String(a.cNome||'').slice(0,8))}<br>🕐 ${esc(a.oraI)}</div>`;}).join('');
         if(confl)h+=`<div style="font-size:11px;color:#ef4444;font-weight:700">⚠</div>`;
       }
-      if(hasProp)h+=`<div style="font-size:11px;color:var(--gold);font-weight:800;text-align:center">📝</div>`;
       h+=`</td>`;
     });
     h+=`</tr>`;
   });
-  h+=`</tbody></table></div><div style="font-size:12px;color:var(--text2);margin-top:8px">${bm?'📝 = proposta aggiunta · tocca una cella per modificare':'— = libero · tocca cella libera per proporre'}</div>`;
+  h+=`</tbody></table></div><div style="font-size:12px;color:var(--text2);margin-top:8px">— = libero · tocca cella libera per proporre</div>`;
   el.innerHTML=h;
 }
 
-function apriBm(idx){
-  if(!window._batchMode) return;
-  const cell=window._sqCells?.[idx];
-  if(!cell){toast('Errore: cella non trovata');return;}
-  document.getElementById('bm-data').value=cell.data;
-  document.getElementById('bm-nome').value=cell.nome;
-  document.getElementById('bm-cid').value=cell.cId;
-  document.getElementById('bm-ivid').value=cell.ivId;
-  document.getElementById('bm-oraI').value=cell.oraI;
-  document.getElementById('bm-oraF').value=cell.oraF;
-  document.getElementById('bm-note').value='';
-  document.getElementById('bm-title').textContent=`${cell.nome} · ${fgiorno(cell.data)} ${fdate(cell.data)}`;
-  const sel=document.getElementById('bm-cantiere');
-  sel.innerHTML=(DB.cantieri||[]).map(c=>`<option value="${c.id}" data-nome="${c.nome}" ${c.id===cell.cId?'selected':''}>${c.nome}</option>`).join('');
-  document.getElementById('bm-rimuovi').style.display=cell.hasAss?'block':'none';
-  document.getElementById('bm-overlay').style.display='flex';
-}
-
-async function inviaBatch(){
-  if(!window._batchProposte?.length){toast('Nessuna proposta da inviare');return;}
-  document.getElementById('batch-recap-overlay').style.display='none';
-  try{
-    const d=await sbRead(STG_ID);
-    const staging=d||{};
-    if(!staging.changeRequests) staging.changeRequests=[];
-    staging.changeRequests.push({
-      id:uid(), tipo:'TURNI_BATCH',
-      propostoDa:DB._mioNome||'Roberto',
-      timestamp:new Date().toISOString(),
-      letto:false, n:window._batchProposte.length,
-      proposte:window._batchProposte.map(p=>({
-        tipo:p.tipo==='rimuovi'?'RIMUOVI':'MODIFICA_TURNO',
-        data:p.data, nomeDip:p.nome,
-        cantiereId:p.cId, cantiereName:p.cNome,
-        oraInizio:p.oraI, oraFine:p.oraF,
-        intervId:p.ivId||null, note:p.note||''
-      }))
-    });
-    await sbUpsert(STG_ID, staging);
-    const n=window._batchProposte.length;
-    window._batchProposte=[];
-    window._batchMode=false;
-    document.getElementById('batch-fab').style.display='none';
-    const btn=document.getElementById('batch-toggle');
-    if(btn){btn.style.background='rgba(232,184,75,.06)';btn.style.borderColor='rgba(232,184,75,.4)';btn.textContent='✏️ Attiva modalità proposta batch — tocca per modificare più turni insieme';}
-    aggiornaVistaSq();
-    toast(`✓ ${n} proposta${n>1?'e':''} inviate a Giuseppe per approvazione`);
-  }catch(e){ toast('Errore invio: '+e.message); }
-}
 
 
 // solo il nome di battesimo (niente cognome) per le viste condivise/convocazioni
@@ -1004,11 +990,11 @@ function renderOggi(el){
   const card=iv=>`
     <div class="oggi-block" style="background:${iv.col}10;border-left-color:${iv.col}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div style="font-size:16px;font-weight:800;color:${iv.col}">${iv.cNome}</div>
-        <div style="font-size:12px;font-weight:700;background:${iv.col}20;border:1px solid ${iv.col};border-radius:6px;padding:3px 9px;color:${iv.col};white-space:nowrap">🕐 Conv. ${iv.oraInizio||'08:00'}</div>
+        <div style="font-size:16px;font-weight:800;color:${iv.col}">${esc(iv.cNome)}</div>
+        <div style="font-size:12px;font-weight:700;background:${iv.col}20;border:1px solid ${iv.col};border-radius:6px;padding:3px 9px;color:${iv.col};white-space:nowrap">🕐 Conv. ${esc(iv.oraInizio||'08:00')}</div>
       </div>
-      ${iv.descrizione?`<div style="font-size:13px;color:var(--text2);margin-top:5px">${iv.descrizione}</div>`:''}
-      ${sqArr(iv).length?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px">${sqArr(iv).map(p=>`<span class="chip">${soloNome(p)}</span>`).join('')}</div>`:''}
+      ${iv.descrizione?`<div style="font-size:13px;color:var(--text2);margin-top:5px">${esc(iv.descrizione)}</div>`:''}
+      ${sqArr(iv).length?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px">${sqArr(iv).map(p=>`<span class="chip">${esc(soloNome(p))}</span>`).join('')}</div>`:''}
     </div>`;
 
   const oggiIv=getIv(d), domIv=getIv(ds);
@@ -1031,10 +1017,11 @@ function renderCantieri(el){
   const tutti=(DB.cantieri||[]).sort((a,b)=>(a.periodoInizio||'').localeCompare(b.periodoInizio||''));
   const cant=tutti.filter(c=>c.tipo!=='lungo_periodo');
   const lp=tutti.filter(c=>c.tipo==='lungo_periodo');
+  const allocAvviso = DB._allocErr ? `<div class='card' style='border-color:var(--gold);color:var(--gold);font-size:12px'>⚠ Risorse allocate non aggiornate (${esc(DB._allocErr)}). Tocca 🔄 in Oggi per riprovare.</div>` : '';
   if(!cant.length&&!lp.length){ el.innerHTML='<div class="empty">🏗️<br><br>Nessun cantiere attivo</div>'; return; }
   const stMap={'in corso':'b-teal','concluso':'b-gray','perso':'b-red','Perso/Rifiutato':'b-red'};
   const t=today();
-  el.innerHTML=cant.map(c=>{
+  el.innerHTML=allocAvviso+cant.map(c=>{
     const bcls=stMap[c.stato?.toLowerCase()]||'b-gold';
     const prox=(c.interventi||[]).filter(iv=>iv.data>=t).sort((a,b)=>(a.data||'').localeCompare(b.data||'')||cmpOra(a.oraInizio,a.oraFine,'',b.oraInizio,b.oraFine,'')).slice(0,3);
     const attr=c.attrezzature||[];
@@ -1048,23 +1035,23 @@ function renderCantieri(el){
       let dotInner='';
       if(attr.length){
         dotInner+=`<div style='font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text2);margin-bottom:6px'>🔧 Attrezzature proprie</div>`;
-        dotInner+=attr.map(a=>`<div style='display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--brd)'><div style='font-size:13px'>${a.tipo||a.nome||'—'}</div><div style='font-size:12px;color:var(--teal);font-weight:700;white-space:nowrap;margin-left:8px'>${a.quantita||a.qty||1} ${a.unita||a.unit||'pz'}</div></div>`).join('');
+        dotInner+=attr.map(a=>`<div style='display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--brd)'><div style='font-size:13px'>${esc(a.tipo||a.nome||'—')}</div><div style='font-size:12px;color:var(--teal);font-weight:700;white-space:nowrap;margin-left:8px'>${esc(a.quantita||a.qty||1)} ${esc(a.unita||a.unit||'pz')}</div></div>`).join('');
         dotInner+='<div style="margin-bottom:10px"></div>';
       }
       if(serv.length){
         dotInner+=`<div style='font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text2);margin-bottom:6px${attr.length?";margin-top:4px":""}'>🏢 Servizi esterni</div>`;
-        dotInner+=serv.map(s=>`<div style='background:var(--navy2);border-radius:8px;padding:10px;margin-bottom:6px'><div style='font-size:13px;font-weight:700'>${s.fornitore||'—'}</div>${s.descrizione?`<div style='font-size:12px;color:var(--text2);margin-top:3px'>${s.descrizione}</div>`:''}</div>`).join('');
+        dotInner+=serv.map(s=>`<div style='background:var(--navy2);border-radius:8px;padding:10px;margin-bottom:6px'><div style='font-size:13px;font-weight:700'>${esc(s.fornitore||'—')}</div>${s.descrizione?`<div style='font-size:12px;color:var(--text2);margin-top:3px'>${esc(s.descrizione)}</div>`:''}</div>`).join('');
       }
       if(mat.length){
         dotInner+=`<div style='font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text2);margin-bottom:6px${serv.length?";margin-top:6px":""}'>📦 Materiali</div>`;
-        dotInner+=mat.map(m=>`<div style='display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--brd)'><div style='font-size:13px'>${m.nome||'—'}</div><div style='font-size:12px;color:var(--text2);white-space:nowrap;margin-left:8px'>${m.quantita||m.qty||''} ${m.unita||m.unit||''}</div></div>`).join('');
+        dotInner+=mat.map(m=>`<div style='display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--brd)'><div style='font-size:13px'>${esc(m.nome||'—')}</div><div style='font-size:12px;color:var(--text2);white-space:nowrap;margin-left:8px'>${esc(m.quantita||m.qty||'')} ${esc(m.unita||m.unit||'')}</div></div>`).join('');
       }
       dotHtml=`<div class='hr'></div>
-        <button onclick="toggleDot('dot-${cid}')" style='background:none;border:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;padding:0;width:100%;display:flex;justify-content:space-between;align-items:center'>
+        <button onclick="toggleDot('dot-${jsq(cid)}')" style='background:none;border:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;padding:0;width:100%;display:flex;justify-content:space-between;align-items:center'>
           <span>📦 Dotazione cantiere (${attr.length+serv.length+mat.length} voci)</span>
           <span style='color:var(--teal);font-size:16px'>▾</span>
         </button>
-        <div id='dot-${cid}' style='display:none;margin-top:12px'>${dotInner}</div>`;
+        <div id='dot-${esc(cid)}' style='display:none;margin-top:12px'>${dotInner}</div>`;
     }
 
     let proxHtml='';
@@ -1074,9 +1061,9 @@ function renderCantieri(el){
       proxHtml+=prox.map(iv=>`<div style='display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--brd)'>
         <div>
           <div style='font-size:13px;font-weight:600'>${fdateG(iv.data)}${iv.notturno?' 🌙':''}</div>
-          <div style='font-size:11px;color:var(--text2)'>${sqArr(iv).join(', ')||'—'}</div>
+          <div style='font-size:11px;color:var(--text2)'>${esc(sqArr(iv).join(', ')||'—')}</div>
         </div>
-        <div style='color:var(--teal);font-size:11px;white-space:nowrap;margin-left:8px;font-weight:700'>${iv.oraInizio||'08:00'}–${iv.oraFine||'18:00'}</div>
+        <div style='color:var(--teal);font-size:11px;white-space:nowrap;margin-left:8px;font-weight:700'>${esc(iv.oraInizio||'08:00')}–${esc(iv.oraFine||'18:00')}</div>
       </div>`).join('');
     }
 
@@ -1092,8 +1079,8 @@ function renderCantieri(el){
         const nome=ri.nome||'risorsa';
         const periodo=a.data_rientro?`${fd(a.data_uscita)}→${fd(a.data_rientro)}`:`dal ${fd(a.data_uscita)}`;
         return `<div style='display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd)'>
-          <div><div style='font-size:13px;font-weight:600'>${nome}</div><div style='font-size:11px;color:var(--gold)'>📅 ${periodo}</div></div>
-          <div style='font-size:13px;color:var(--teal);font-weight:700;white-space:nowrap;margin-left:8px'>${parseFloat(a.qty)} ${ri.unita||'pz'}</div>
+          <div><div style='font-size:13px;font-weight:600'>${esc(nome)}</div><div style='font-size:11px;color:var(--gold)'>📅 ${esc(periodo)}</div></div>
+          <div style='font-size:13px;color:var(--teal);font-weight:700;white-space:nowrap;margin-left:8px'>${parseFloat(a.qty)} ${esc(ri.unita||'pz')}</div>
         </div>`;
       }).join('');
     }
@@ -1101,16 +1088,16 @@ function renderCantieri(el){
     return `<div class='card'>
       <div style='display:flex;justify-content:space-between;align-items:flex-start'>
         <div style='flex:1;margin-right:8px'>
-          <div style='font-size:16px;font-weight:800'>${c.nome}</div>
-          ${c.committente?`<div style='font-size:12px;color:var(--text2);margin-top:2px'>${c.committente}${c.luogo?' · 📍'+c.luogo:''}</div>`:''}
+          <div style='font-size:16px;font-weight:800'>${esc(c.nome)}</div>
+          ${c.committente?`<div style='font-size:12px;color:var(--text2);margin-top:2px'>${esc(c.committente)}${c.luogo?' · 📍'+esc(c.luogo):''}</div>`:''}
           <div style='font-size:12px;color:var(--text2);margin-top:3px;font-family:monospace'>📅 ${fdate(c.periodoInizio)} → ${fdate(c.periodoFine||c.periodoInizio)}</div>
         </div>
-        <span class='badge ${bcls}'>${c.stato||'da confermare'}</span>
+        <span class='badge ${bcls}'>${esc(c.stato||'da confermare')}</span>
       </div>
       ${proxHtml}
       ${allocHtml}
       ${dotHtml}
-      ${c.note?`<div class='hr'></div><div style='font-size:12px;color:var(--text2);font-style:italic'>${c.note}</div>`:''}
+      ${c.note?`<div class='hr'></div><div style='font-size:12px;color:var(--text2);font-style:italic'>${esc(c.note)}</div>`:''}
     </div>`;
   }).join('');
 
@@ -1122,14 +1109,14 @@ function renderCantieri(el){
       return `<div class='card' style='border-color:rgba(122,160,255,.3)'>
         <div style='display:flex;justify-content:space-between;align-items:flex-start'>
           <div>
-            <div style='font-size:13px;font-weight:800'>${c.nome}</div>
-            ${c.luogo?`<div style='font-size:11px;color:var(--text2)'>📍 ${c.luogo}</div>`:''}
+            <div style='font-size:13px;font-weight:800'>${esc(c.nome)}</div>
+            ${c.luogo?`<div style='font-size:11px;color:var(--text2)'>📍 ${esc(c.luogo)}</div>`:''}
           </div>
           <span class='badge' style='background:rgba(122,160,255,.15);color:#7aa0ff;border:1px solid rgba(122,160,255,.3)'>📦 Deposito</span>
         </div>
         ${c.dataRitiro?`<div style='margin-top:8px;font-size:12px;color:${gg<=7?'var(--gold)':'var(--text2)'};font-weight:${gg<=7?700:400}'>
           📅 Ritiro: ${fdate(c.dataRitiro)}${gg!==null?` (${gg===0?'OGGI':gg===1?'domani':'tra '+gg+' gg'})`:''}</div>`:''}
-        ${prossivi.length?`<div style='margin-top:6px;font-size:11px;color:var(--teal);font-weight:700'>Prossimo: ${fdateG(prossivi[0].data)} ${prossivi[0].oraInizio||''}–${prossivi[0].oraFine||''}</div>`:''}
+        ${prossivi.length?`<div style='margin-top:6px;font-size:11px;color:var(--teal);font-weight:700'>Prossimo: ${fdateG(prossivi[0].data)} ${esc(prossivi[0].oraInizio||'')}–${esc(prossivi[0].oraFine||'')}</div>`:''}
       </div>`;
     }).join('');
     el.innerHTML+= `<div style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#7aa0ff;margin:18px 0 8px'>📦 Depositi attrezzature (${lp.length})</div>${lpHtml}`;
@@ -1238,16 +1225,16 @@ function renderPresRows(){
     const parziale = r.stato==='parziale' ? `
       <div style="display:flex;gap:8px;margin-top:9px;align-items:center">
         <span style="font-size:11px;color:var(--text2);white-space:nowrap">Orario reale</span>
-        <input type="time" value="${r.oraI}" onchange="presTime(${i},'oraI',this.value)" style="flex:1;margin-bottom:0;padding:7px">
+        <input type="time" value="${esc(r.oraI)}" onchange="presTime(${i},'oraI',this.value)" style="flex:1;margin-bottom:0;padding:7px">
         <span style="color:var(--text2)">→</span>
-        <input type="time" value="${r.oraF}" onchange="presTime(${i},'oraF',this.value)" style="flex:1;margin-bottom:0;padding:7px">
+        <input type="time" value="${esc(r.oraF)}" onchange="presTime(${i},'oraF',this.value)" style="flex:1;margin-bottom:0;padding:7px">
       </div>` : '';
     const dim = r.stato==='assente' ? 'opacity:.55;' : '';
     return `<div class="card" style="padding:12px;${dim}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px">
         <div>
-          <div style="font-size:15px;font-weight:800">${soloNome(r.nome)}</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">🏗 ${r.cantiere} · 🕐 ${r.oraIPlan}–${r.oraFPlan}${r.notturno?' 🌙':''}</div>
+          <div style="font-size:15px;font-weight:800">${esc(soloNome(r.nome))}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">🏗 ${esc(r.cantiere)} · 🕐 ${esc(r.oraIPlan)}–${esc(r.oraFPlan)}${r.notturno?' 🌙':''}</div>
         </div>
         ${r.manual?`<button onclick="presRm(${i})" style="background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer" title="Rimuovi">✕</button>`:''}
       </div>
@@ -1264,8 +1251,8 @@ function presRm(i){ PRES.rows.splice(i,1); renderPresRows(); }
 
 function renderPresAdd(){
   const el=document.getElementById('pres-add'); if(!el) return;
-  const pers=(DB.personaleHR||[]).map(p=>`<option value="${((p.nome||'')+' '+(p.cognome||'')).trim()}">`).join('');
-  const cant=(DB.cantieri||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  const pers=(DB.personaleHR||[]).map(p=>`<option value="${esc(((p.nome||'')+' '+(p.cognome||'')).trim())}">`).join('');
+  const cant=(DB.cantieri||[]).map(c=>`<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
   el.innerHTML=`
     <details style="margin-bottom:12px" id="pres-add-det">
       <summary style="cursor:pointer;color:var(--teal);font-size:13px;font-weight:700;padding:11px 14px;background:var(--navy2);border-radius:9px;list-style:none">➕ Aggiungi una persona non prevista</summary>
@@ -1328,15 +1315,15 @@ async function inviaPresenze(){
     label:`Presenze ${fdateG(d)} — ${parts.join(', ')}`
   };
   try{
-    STAGING.changeRequests.push(cr);
-    await saveStaging();
+    // aggiunge solo questa proposta alla riga fresca (non riscrive le altre)
+    await modificaStaging(d=>{ if(!d.changeRequests.some(x=>x.id===cr.id)) d.changeRequests.push(cr); });
     aggBadge();
     PRES._builtFor=null;   // ricostruisci pulito alla prossima apertura
     toast('✓ Presenze inviate a Giuseppe');
     navigate('proposte');
   }catch(e){
-    STAGING.changeRequests.pop();
-    toast('⚠ Errore invio: '+e.message);
+    console.error(e);
+    toast('⚠ Errore invio: '+e.message, 4500);
   }
 }
 
@@ -1344,8 +1331,8 @@ async function inviaPresenze(){
 let PF={tipo:'INTERV_ADD',cId:'',sqTmp:[],ivVecchio:null};
 
 function renderProponi(el){
-  const opts=(DB.cantieri||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  const pers=(DB.personaleHR||[]).map(p=>`<option value="${(p.nome||'')+' '+(p.cognome||'')}">`) .join('');
+  const opts=(DB.cantieri||[]).map(c=>`<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
+  const pers=(DB.personaleHR||[]).map(p=>`<option value="${esc((p.nome||'')+' '+(p.cognome||''))}">`) .join('');
   el.innerHTML=`
     <datalist id="dl-p">${pers}</datalist>
     <div class="card">
@@ -1403,7 +1390,7 @@ function renderBody(){
       <div class="field"><label>Note per il responsabile</label><textarea id="pf-note" placeholder="Informazioni aggiuntive..."></textarea></div>`;
     renderTags();
   } else if(PF.tipo==='INTERV_MOD'){
-    const ivOpts=cant?(cant.interventi||[]).map(iv=>`<option value="${iv.id}">${fdateG(iv.data)} ${iv.oraInizio||''}–${iv.oraFine||''} — ${iv.descrizione||'intervento'}</option>`).join(''):'';
+    const ivOpts=cant?(cant.interventi||[]).map(iv=>`<option value="${esc(iv.id)}">${fdateG(iv.data)} ${esc(iv.oraInizio||'')}–${esc(iv.oraFine||'')} — ${esc(iv.descrizione||'intervento')}</option>`).join(''):'';
     b.innerHTML=`
       <div class="field"><label>Intervento da modificare</label>
         <select id="pf-iv" onchange="precompilaMod(this.value)">
@@ -1450,7 +1437,7 @@ function precompilaMod(ivId){
 
 function renderTags(){
   const el=document.getElementById('pf-tags'); if(!el) return;
-  el.innerHTML=PF.sqTmp.map((n,i)=>`<span class="chip" style="cursor:pointer" onclick="rmTag(${i})">${n} ×</span>`).join('');
+  el.innerHTML=PF.sqTmp.map((n,i)=>`<span class="chip" style="cursor:pointer" onclick="rmTag(${i})">${esc(n)} ×</span>`).join('');
 }
 function addTag(){
   const v=(document.getElementById('pf-sq-in')?.value||'').trim();
@@ -1495,15 +1482,15 @@ async function inviaProposta(){
   }
 
   try{
-    STAGING.changeRequests.push(cr);
-    await saveStaging();
+    // aggiunge solo questa proposta alla riga fresca (non riscrive le altre)
+    await modificaStaging(d=>{ if(!d.changeRequests.some(x=>x.id===cr.id)) d.changeRequests.push(cr); });
     aggBadge();
     PF={tipo:'INTERV_ADD',cId:'',sqTmp:[],ivVecchio:null};
     toast('✓ Proposta inviata al responsabile');
     navigate('proposte');
   }catch(e){
-    STAGING.changeRequests.pop(); // rollback ottimistico
-    toast('⚠ Errore invio: '+e.message);
+    console.error(e);
+    toast('⚠ Errore invio: '+e.message, 4500);
   }
 }
 
@@ -1517,31 +1504,36 @@ function renderProposte(el){
   el.innerHTML=crs.map(cr=>`
     <div class="pr-card ${PC[cr.stato]||''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div style="font-size:13px;font-weight:700;flex:1">${cr.label||cr.tipo}</div>
-        <span class="badge ${SC[cr.stato]||'b-gray'}" style="font-size:11px">${SL[cr.stato]||cr.stato}</span>
+        <div style="font-size:13px;font-weight:700;flex:1">${esc(cr.label||cr.tipo)}</div>
+        <span class="badge ${SC[cr.stato]||'b-gray'}" style="font-size:11px">${esc(SL[cr.stato]||cr.stato)}</span>
       </div>
       <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:4px">
-        🏗 ${cr.cantiereName} · ${new Date(cr.timestamp).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+        🏗 ${esc(cr.cantiereName)} · ${new Date(cr.timestamp).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
       </div>
-      ${cr.note?`<div style="font-size:12px;color:var(--text2);margin-top:6px;font-style:italic">"${cr.note}"</div>`:''}
-      ${cr.stato==='rejected'&&cr.motivoRifiuto?`<div style="font-size:12px;color:var(--red);margin-top:6px;font-weight:600">Motivo: ${cr.motivoRifiuto}</div>`:''}
-      ${cr.stato==='pending'?`<button onclick="annullaProposta('${cr.id}')" style="background:none;border:none;color:var(--text2);font-size:11px;cursor:pointer;margin-top:8px">Annulla ×</button>`:''}
+      ${cr.note?`<div style="font-size:12px;color:var(--text2);margin-top:6px;font-style:italic">"${esc(cr.note)}"</div>`:''}
+      ${cr.stato==='rejected'&&cr.motivoRifiuto?`<div style="font-size:12px;color:var(--red);margin-top:6px;font-weight:600">Motivo: ${esc(cr.motivoRifiuto)}</div>`:''}
+      ${cr.stato==='pending'?`<button onclick="annullaProposta('${jsq(cr.id)}')" style="background:none;border:none;color:var(--text2);font-size:11px;cursor:pointer;margin-top:8px">Annulla ×</button>`:''}
     </div>`).join('');
 }
 
 async function annullaProposta(id){
   if(!confirm('Annullare questa proposta?')) return;
-  const idx=STAGING.changeRequests.findIndex(r=>r.id===id);
-  if(idx<0) return;
-  const tolta=STAGING.changeRequests.splice(idx,1)[0];
+  if(!STAGING.changeRequests.some(r=>r.id===id)) return;
   try{
-    await saveStaging();
+    // rimuove solo questa proposta dalla riga fresca, e solo se è ancora in attesa
+    // (se Giuseppe l'ha appena gestita non va cancellata)
+    await modificaStaging(d=>{
+      const cr=d.changeRequests.find(r=>r.id===id);
+      if(cr && cr.stato!=='pending') throw new Error('la proposta è già stata gestita dal responsabile');
+      d.changeRequests=d.changeRequests.filter(r=>r.id!==id);
+    });
     aggBadge();
     renderProposte(document.getElementById('content'));
     toast('Proposta annullata');
   }catch(e){
-    STAGING.changeRequests.splice(idx,0,tolta); // rollback: rimette proprio la proposta tolta
-    toast('⚠ Errore: '+e.message);
+    console.error(e);
+    toast('⚠ Errore: '+e.message, 4500);
+    if(PAGE==='proposte'){ try{ await loadStaging(); aggBadge(); renderProposte(document.getElementById('content')); }catch(_){} }
   }
 }
 
