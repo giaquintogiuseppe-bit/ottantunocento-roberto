@@ -115,22 +115,57 @@ textarea{resize:vertical;min-height:90px;font-size:13px}
   function setS(s){ try{ s ? STORE.setItem(LSK, JSON.stringify(s)) : STORE.removeItem(LSK); }catch(e){} }
   function valid(s){ return s && s.access_token && s.expires_at && (Date.now()/1000 < s.expires_at - 60); }
 
-  window.fetch = function(input, init){
-    try{
-      var url = (typeof input === 'string') ? input : (input && input.url) || '';
-      if(url.indexOf(SB_URL) === 0 && url.indexOf('/auth/v1/') < 0){
-        var s = getS();
-        if(s && s.access_token){
-          var h = new Headers((init && init.headers) || (typeof input!=='string' && input.headers) || {});
-          h.set('apikey', SB_ANON);
-          h.set('Authorization', 'Bearer ' + s.access_token);
-          init = Object.assign({}, init, { headers: h });
-          if(typeof input !== 'string') input = input.url;
-        }
+  // ── rinnovo automatico del token (scade ogni ~60 min) ────────────────────
+  var _rinnovoInCorso = null;
+  function rinnova(forza){
+    var s = getS();
+    if(!s || !s.refresh_token) return Promise.resolve(false);
+    if(!forza && s.expires_at && (Date.now()/1000 < s.expires_at - 300)) return Promise.resolve(true);
+    if(_rinnovoInCorso) return _rinnovoInCorso;
+    _rinnovoInCorso = _fetch(SB_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method:'POST', headers:{ 'Content-Type':'application/json', 'apikey':SB_ANON },
+      body: JSON.stringify({ refresh_token: s.refresh_token })
+    }).then(function(r){ return r.json().then(function(j){
+      if(r.ok && j.access_token){
+        setS({ access_token:j.access_token, refresh_token:j.refresh_token,
+              expires_at: j.expires_at || (Math.floor(Date.now()/1000) + (j.expires_in||3600)) });
+        return true;
       }
-    }catch(e){}
-    return _fetch(input, init);
+      return false;
+    }); }).catch(function(){ return false; })
+      .then(function(ok){ _rinnovoInCorso = null; return ok; });
+    return _rinnovoInCorso;
+  }
+  function conToken(input, init){
+    var s = getS();
+    if(!s || !s.access_token) return [input, init];
+    var h = new Headers((init && init.headers) || (typeof input!=='string' && input.headers) || {});
+    h.set('apikey', SB_ANON);
+    h.set('Authorization', 'Bearer ' + s.access_token);
+    return [ (typeof input !== 'string') ? input.url : input, Object.assign({}, init, { headers: h }) ];   // usa l'URL così vincono i nostri header
+  }
+
+  // ── fetch patchato: inietta il token utente sulle chiamate Supabase ──────
+  // Rinnova il token prima che scada e, se il server risponde 401, lo rinnova e riprova una volta.
+  window.fetch = function(input, init){
+    var url = '';
+    try{ url = (typeof input === 'string') ? input : (input && input.url) || ''; }catch(e){}
+    if(url.indexOf(SB_URL) !== 0 || url.indexOf('/auth/v1/') >= 0 || !getS()) return _fetch(input, init);
+    return rinnova(false).then(function(){
+      var a = conToken(input, init);
+      return _fetch(a[0], a[1]).then(function(r){
+        if(r.status !== 401 || !(getS()||{}).refresh_token) return r;
+        return rinnova(true).then(function(ok){
+          if(!ok) return r;
+          var b = conToken(input, init);
+          return _fetch(b[0], b[1]);
+        });
+      });
+    });
   };
+  // controllo anche al rientro nell'app e ogni 5 minuti
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) rinnova(false); });
+  setInterval(function(){ rinnova(false); }, 5*60*1000);
 
   window.l81login = function(pin){
     return _fetch(SB_URL + '/auth/v1/token?grant_type=password', {
@@ -288,7 +323,9 @@ let PAGE    = 'oggi';
 let pinBuf  = '';
 
 // ── UTILITY ────────────────────────────────────────────────────
-const today = () => new Date().toISOString().slice(0,10);
+// data in ora italiana (toISOString usa l'ora UTC: tra mezzanotte e le 2 dava il giorno prima)
+const isoLocale = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today = () => isoLocale(new Date());
 const uid   = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const fdate = s => { if(!s)return'—'; const[y,m,d]=s.split('-'); return`${d}/${m}/${y}`; };
 const GG    = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
@@ -435,8 +472,7 @@ async function verifyPin(){
       if(navigator.vibrate) navigator.vibrate([80,30,80]);
       return;
     }
-    const h = await sha256(pinBuf);
-    localStorage.setItem('r_auth', h);
+    try{ localStorage.removeItem('r_auth'); }catch(_){}   // vecchia impronta del PIN: non serviva e permetteva di ricavarlo
     await loadStaging();
     await loadMain();
     await bootApp();
@@ -534,7 +570,7 @@ function timeOverlap(s1,e1,s2,e2){
 }
 
 function giornoDopo(d){
-  const x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+1); return x.toISOString().slice(0,10);
+  const x=new Date(d+'T12:00:00'); x.setDate(x.getDate()+1); return isoLocale(x);
 }
 
 function buildSqMappa(giorni){
@@ -573,7 +609,7 @@ function getDatiSq(){
   const al=document.getElementById('sq-r-to')?.value;
   if(!da||!al) return null;
   const giorni=[]; let cur=new Date(da+'T12:00:00'),fine=new Date(al+'T12:00:00'),g=0;
-  while(cur<=fine&&g<31){giorni.push(cur.toISOString().slice(0,10));cur.setDate(cur.getDate()+1);g++;}
+  while(cur<=fine&&g<31){giorni.push(isoLocale(cur));cur.setDate(cur.getDate()+1);g++;}
   const mappa=buildSqMappa(giorni);
   const persone=(DB.personaleHR||[]).map(p=>`${p.nome||''} ${p.cognome||''}`.trim()).filter(Boolean);
   const extra=new Set();
@@ -621,9 +657,7 @@ function renderSquadre(el){
       <div style="flex:1"><label>A</label><input type="date" id="sq-r-to" onchange="aggiornaVistaSq()" style="margin-bottom:0"></div>
     </div>
     <div id="sq-r-wrap"></div>
-    <button id="batch-toggle" onclick="toggleBatchMode()" style="width:100%;background:rgba(232,184,75,.06);border:1.5px dashed rgba(232,184,75,.4);border-radius:10px;padding:11px;color:var(--gold);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px">
-      ✏️ Attiva modalità proposta batch — tocca per modificare più turni insieme
-    </button>`;
+`;   // (tasto "modalità proposta batch" tolto: le sue funzioni non esistevano e il tocco dava errore)
   // default: questa settimana
   setPeriodoSq('settimana');
 }
@@ -637,8 +671,8 @@ function setPeriodoSq(tipo){
     const g=oggi.getDay()||7;
     const lun=new Date(oggi); lun.setDate(oggi.getDate()-g+1);
     const dom=new Date(lun); dom.setDate(lun.getDate()+6);
-    da=lun.toISOString().slice(0,10);
-    al=dom.toISOString().slice(0,10);
+    da=isoLocale(lun);
+    al=isoLocale(dom);
   }
   const ef=document.getElementById('sq-r-from'), et=document.getElementById('sq-r-to');
   if(ef) ef.value=da;
@@ -879,7 +913,7 @@ function esportaWhatsApp(data){
     (c.interventi||[]).forEach(iv=>{
       const nott=iv.notturno||(toMin(iv.oraFine||'18:00')<=toMin(iv.oraInizio||'08:00'));
       const ieri=new Date(data+'T12:00:00'); ieri.setDate(ieri.getDate()-1);
-      const ieriStr=ieri.toISOString().slice(0,10);
+      const ieriStr=isoLocale(ieri);
       if(iv.data!==data&&!(nott&&iv.data===ieriStr)) return;
       lista.push({...iv,cNome:c.nome,cId:c.id});
     });
@@ -928,7 +962,7 @@ function precompilaProponiDaSquadre(data, nomeDip, _c){
 function renderOggi(el){
   const d=today();
   const dom=new Date(); dom.setDate(dom.getDate()+1);
-  const ds=dom.toISOString().slice(0,10);
+  const ds=isoLocale(dom);
 
   el.innerHTML=`
   <div style="background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px;margin-bottom:16px">
@@ -956,7 +990,7 @@ function renderOggi(el){
       (c.interventi||[]).forEach(iv=>{
         const nott=iv.notturno||(toMin(iv.oraFine||'18:00')<=toMin(iv.oraInizio||'08:00'));
         const ieri=new Date(data+'T12:00:00'); ieri.setDate(ieri.getDate()-1);
-        if(iv.data===data||(nott&&iv.data===ieri.toISOString().slice(0,10))){
+        if(iv.data===data||(nott&&iv.data===isoLocale(ieri))){
           // I cantieri lungo_periodo appaiono SOLO se hanno un intervento esplicito quel giorno
           // (non come cantiere "attivo" generico — per questo nessun filtro aggiuntivo qui,
           //  già filtrati perché mostriamo solo IV con data corrispondente)
@@ -1119,7 +1153,7 @@ let PRES = { data:'', rows:[], _builtFor:null };
 function presQuick(tipo){
   const d=new Date();
   if(tipo==='ieri') d.setDate(d.getDate()-1);
-  presSetData(d.toISOString().slice(0,10));
+  presSetData(isoLocale(d));
 }
 function presSetData(d){
   PRES.data=d;
@@ -1499,14 +1533,14 @@ async function annullaProposta(id){
   if(!confirm('Annullare questa proposta?')) return;
   const idx=STAGING.changeRequests.findIndex(r=>r.id===id);
   if(idx<0) return;
-  STAGING.changeRequests.splice(idx,1);
+  const tolta=STAGING.changeRequests.splice(idx,1)[0];
   try{
     await saveStaging();
     aggBadge();
     renderProposte(document.getElementById('content'));
     toast('Proposta annullata');
   }catch(e){
-    STAGING.changeRequests.splice(idx,0,STAGING.changeRequests[idx]); // rollback
+    STAGING.changeRequests.splice(idx,0,tolta); // rollback: rimette proprio la proposta tolta
     toast('⚠ Errore: '+e.message);
   }
 }
